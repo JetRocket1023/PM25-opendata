@@ -2,11 +2,13 @@ name: Scheduled Python Script
 
 on:
   schedule:
-    - cron: '59 15 * * *' # 每天國際標準時間 00:00 (台灣時間 08:00)
-  workflow_dispatch: # 允許手動觸發
+    - cron: '59 15 * * *' # 台灣時間 23:59 (原設定)
+  workflow_dispatch: # 允許點擊按鈕手動測試
+
 env:
-  # 提前應對 2026 年的 Node 升級警告
+  # 解決 2026 年 Node.js 20 棄用警告
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   run-python:
     runs-on: ubuntu-latest
@@ -18,21 +20,20 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          cache: 'pip' # 開啟快取功能，加快後續運行速度
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          fi
+          python -m pip install --upgrade pip
+          # 強制安裝必要套件，確保環境變數與 SSL 加密正常運作
+          pip install pymysql pandas requests python-dotenv cryptography
 
       - name: Run script
         run: python PM25.py
         env:
-
-          HOST: ${{ secrets.HOST}}
-          PORT: ${{ secrets.PORT}}
-          USER: ${{ secrets.USER}}
-          PASSWORD: ${{ secrets.PASSWORD}}
-          NAME: ${{ secrets.NAME}}
-          
+          # 這裡必須與 GitHub Repository Settings > Secrets 中的名稱完全一致
+          HOST: ${{ secrets.HOST }}
+          PORT: ${{ secrets.PORT }}
+          USER: ${{ secrets.USER }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          NAME: ${{ secrets.NAME }}
